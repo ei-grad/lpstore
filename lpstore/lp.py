@@ -1,6 +1,6 @@
 from collections import namedtuple
 from datetime import datetime, timedelta
-from multiprocessing.pool import Pool
+from multiprocessing.pool import ThreadPool as Pool
 import logging
 import os
 import sys
@@ -13,6 +13,8 @@ import ujson as json
 
 requests_cache.install_cache('eve_cache')
 
+logger = logging.getLogger(__name__)
+
 
 class Crest():
 
@@ -20,6 +22,10 @@ class Crest():
 
     def __init__(self):
         self.http = requests.Session()
+        ua = 'Just another one LPStore (lp.ei-grad.ru, %s)' % (
+            self.http.headers['User-Agent']
+        )
+        self.http.headers['User-Agent'] = ua
 
     def url(self, url):
         return self.base_url + url
@@ -137,8 +143,7 @@ def get_item_info(lp_info, region_id, ndays):
     cost_per_item = (lp_info['iskCost'] + req_items_cost) / qty
     profit_per_item = avg_price - cost_per_item
     isk_per_lp = profit_per_item / (lp_info['lpCost'] / qty)
-
-    return LPStoreInfo(
+    ret = LPStoreInfo(
         typeID=type_id,
         name=PRICES[type_id]['type']['name'],
         qty=qty,
@@ -152,9 +157,10 @@ def get_item_info(lp_info, region_id, ndays):
         profit_per_day=int((profit_per_item * volume_per_day) / ndays),
         isk_per_lp=int(isk_per_lp),
     )
+    return ret
 
 
-POOL = Pool(64)
+POOL = Pool(20)
 
 
 def get_lpstore_info(region_id, corp_id, ndays=14):

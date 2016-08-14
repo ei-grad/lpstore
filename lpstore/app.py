@@ -1,10 +1,16 @@
 import logging
+import os
 
 from flask import Flask, render_template, request
 
 from lpstore.lp import REGIONS, NPC_CORPS, get_lpstore_info, LPStoreInfo
 
+
 logger = logging.getLogger(__name__)
+
+
+if 'DEBUG' in os.environ:
+    logging.basicConfig(level=logging.DEBUG)
 
 
 app = Flask(__name__)
@@ -44,3 +50,7 @@ def home():
         columns=LPStoreInfo._fields,
         items=items,
     )
+
+
+if __name__ == "__main__":
+    app.run()
