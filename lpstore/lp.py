@@ -5,13 +5,10 @@ import logging
 import os
 import sys
 
-import requests
-import requests_cache
+from requests_cache import CachedSession
 
 import ujson as json
 
-
-requests_cache.install_cache('eve_cache')
 
 logger = logging.getLogger(__name__)
 
@@ -21,8 +18,8 @@ class Crest():
     base_url = 'https://crest-tq.eveonline.com/'
 
     def __init__(self):
-        self.http = requests.Session()
-        ua = 'Just another one LPStore (lp.ei-grad.ru, %s)' % (
+        self.http = CachedSession('lpstore-requests-cache', 'redis')
+        ua = 'Just another one LPStore (https://lp.ei-grad.ru; %s)' % (
             self.http.headers['User-Agent']
         )
         self.http.headers['User-Agent'] = ua
