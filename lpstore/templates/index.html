@@ -7,7 +7,7 @@
     <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
     <meta name="description" content="">
     <meta name="author" content="">
-    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.png') }}">
 
     <title>Just another one LPStore</title>
 
@@ -73,11 +73,11 @@
     </div><!-- /.container -->
 
     <div class="container-fluid">
-        <table class="table table-striped table-hover ">
+        <table class="table table-striped table-hover text-right">
             <thead>
                 <tr>
                     {% for i in columns %}
-                    <th>{{ i }}</th>
+                    <th class="text-right">{{ i }}</th>
                     {% endfor %}
                 </tr>
             </thead>
@@ -85,7 +85,7 @@
                 {% for i in items %}
                 <tr>
                     {% for j in columns %}
-                    <td>{{ i[j] }}</td>
+                    <td>{{ i[j]|locale_format }}</td>
                     {% endfor %}
                 </tr>
                 {% endfor %}

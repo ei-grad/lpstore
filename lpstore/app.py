@@ -1,5 +1,6 @@
 import logging
 import os
+import locale
 
 from flask import Flask, render_template, request
 
@@ -11,6 +12,9 @@ logger = logging.getLogger(__name__)
 
 if 'DEBUG' in os.environ:
     logging.basicConfig(level=logging.DEBUG)
+
+
+locale.setlocale(locale.LC_ALL, 'ru_RU.UTF-8')
 
 
 app = Flask(__name__)
@@ -51,6 +55,12 @@ def home():
         items=items,
     )
 
+
+@app.template_filter('locale_format')
+def locale_format_filter(value):
+    if isinstance(value, int):
+        return '{:n}'.format(value)
+    return value
 
 if __name__ == "__main__":
     app.run()
