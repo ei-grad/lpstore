@@ -7,8 +7,6 @@ import sys
 
 from requests_cache import CachedSession
 
-import ujson as json
-
 
 logger = logging.getLogger(__name__)
 
@@ -53,12 +51,16 @@ class Crest():
         resp['items'].sort(key=lambda x: x['date'])
         return resp['items']
 
+    def get_corporation_lpstore_types(self, corp_id):
+        url = 'corporations/%s/loyaltystore/' % corp_id
+        resp = self.get(url)
+        return resp['items']
+
 
 crest = Crest()
 
 
 BASEDIR = os.path.dirname(__file__)
-PRICES = {i['type']['id']: i for i in crest.get_prices()}
 REGIONS = {i['id']: i for i in crest.get_regions()}
 NPC_CORPS = {
     i['id']: i
@@ -68,17 +70,6 @@ NPC_CORPS = {
                      '%s.json' % i['id'])
     )
 }
-
-
-def get_corporation_lpstore_types(corp_id):
-    # '''
-    # SELECT lpOffers.typeID
-    # FROM lpOffers
-    # JOIN lpStore ON lpStore.offerID = lpOffers.offerID
-    # WHERE corporationID = %s
-    # '''
-    fname = os.path.join(BASEDIR, 'data', 'lpdb', '%s.json' % corp_id)
-    return json.load(open(fname))
 
 
 LPStoreInfo = namedtuple("LPStoreInfo", (
@@ -117,9 +108,7 @@ def get_history_avg(hist, ndays):
 
 def get_item_info(lp_info, region_id, ndays):
 
-    type_id = lp_info['typeID']
-    if type_id not in PRICES:
-        return
+    type_id = lp_info['item']['id']
 
     hist = crest.get_history(region_id, type_id)
 
@@ -131,18 +120,18 @@ def get_item_info(lp_info, region_id, ndays):
     avg_price = total_sold / volume_per_day
 
     req_items_cost = 0
-    for req_item_id, count in lp_info.get('reqItems', {}).items():
-        h = crest.get_history(region_id, req_item_id)
+    for req_item in lp_info['requiredItems']:
+        h = crest.get_history(region_id, req_item['item']['id'])
         ts, tv = get_history_avg(h, ndays)
-        req_items_cost += (ts / tv) * count
+        req_items_cost += (ts / tv) * req_item['quantity']
 
-    qty = lp_info['qty']
+    qty = lp_info['quantity']
     cost_per_item = (lp_info['iskCost'] + req_items_cost) / qty
     profit_per_item = avg_price - cost_per_item
     isk_per_lp = profit_per_item / (lp_info['lpCost'] / qty)
     ret = LPStoreInfo(
         typeID=type_id,
-        name=PRICES[type_id]['type']['name'],
+        name=lp_info['item']['name'],
         qty=qty,
         isk_cost=lp_info['iskCost'],
         lp_cost=lp_info['lpCost'],
@@ -164,7 +153,7 @@ def get_lpstore_info(region_id, corp_id, ndays=14):
 
     ret = []
 
-    for lp_info in get_corporation_lpstore_types(corp_id).values():
+    for lp_info in crest.get_corporation_lpstore_types(corp_id):
         ret.append(POOL.apply_async(get_item_info, (lp_info, region_id, ndays)))
 
     ret = [i.get() for i in ret]
