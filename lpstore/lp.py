@@ -65,10 +65,7 @@ REGIONS = {i['id']: i for i in crest.get_regions()}
 NPC_CORPS = {
     i['id']: i
     for i in crest.get_npc_corps()
-    if os.path.exists(
-        os.path.join(BASEDIR, 'data', 'lpdb',
-                     '%s.json' % i['id'])
-    )
+    if crest.get_corporation_lpstore_types(i['id'])
 }
 
 
